@@ -1,0 +1,34 @@
+// Prisma schema — GTA6 XDeals pré-venda
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id               String    @id @default(cuid())
+  customerName     String
+  customerEmail    String
+  customerWhatsapp String
+  customerDocument String    // CPF sem formatação (exigido pela MisticPay)
+  tier             String    @default("early_bird") // early_bird | regular
+  amountBRL        Float
+  amountUSD        Float
+  applicationTxId  String    @unique // ID enviado à MisticPay (nosso)
+  misticpayTxId    String?   // ID retornado pela MisticPay
+  status           String    @default("PENDING") // PENDING | PAID | EXPIRED | FAILED
+  qrCodeBase64     String?
+  qrcodeUrl        String?
+  copyPaste        String?
+  e2e              String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  paidAt           DateTime?
+
+  @@index([status])
+  @@index([tier])
+  @@index([customerEmail])
+}
