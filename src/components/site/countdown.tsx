@@ -36,27 +36,29 @@ export function Countdown({ targetIso, label }: { targetIso: string; label?: str
   ];
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex w-full flex-col items-center gap-3">
       {label && (
-        <span className="text-xs uppercase tracking-[0.3em] text-neon-cyan/80">{label}</span>
+        <span className="text-[10px] uppercase tracking-[0.25em] text-neon-cyan/80 sm:text-xs sm:tracking-[0.3em]">
+          {label}
+        </span>
       )}
-      <div className="flex items-stretch gap-2 sm:gap-3">
+      <div className="grid w-full max-w-md grid-cols-4 items-stretch gap-1.5 sm:max-w-none sm:gap-3">
         {items.map((it, i) => (
           <div
             key={it.l}
-            className="relative flex min-w-[68px] flex-col items-center justify-center rounded-xl neon-border-cyan/60 bg-card/70 px-3 py-3 backdrop-blur sm:min-w-[88px] sm:px-5 sm:py-4"
+            className="relative flex flex-col items-center justify-center rounded-lg neon-border-cyan/60 bg-card/70 px-1 py-2 backdrop-blur sm:rounded-xl sm:px-5 sm:py-4"
           >
             <span
-              className="font-display text-3xl leading-none text-neon-cyan sm:text-5xl"
+              className="font-display text-2xl leading-none text-neon-cyan sm:text-4xl md:text-5xl"
               suppressHydrationWarning
             >
               {String(it.v).padStart(2, "0")}
             </span>
-            <span className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground sm:text-xs">
+            <span className="mt-1 text-[9px] uppercase tracking-widest text-muted-foreground sm:text-xs">
               {it.l}
             </span>
             {i < items.length - 1 && (
-              <span className="absolute -right-[6px] top-1/2 -translate-y-1/2 font-display text-2xl text-neon-pink/60 sm:text-3xl">
+              <span className="absolute -right-[5px] top-1/2 hidden -translate-y-1/2 font-display text-2xl text-neon-pink/60 sm:block sm:text-3xl">
                 :
               </span>
             )}

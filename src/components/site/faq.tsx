@@ -39,7 +39,7 @@ const FAQS = [
 
 export function Faq() {
   return (
-    <section id="faq" className="relative scroll-mt-20 py-20 sm:py-28">
+    <section id="faq" className="relative scroll-mt-20 py-16 sm:py-28">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

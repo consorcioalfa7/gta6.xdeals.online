@@ -179,9 +179,9 @@ export function CheckoutDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto border-border/70 bg-card/95 backdrop-blur-xl sm:max-w-lg">
+      <DialogContent className="max-h-[92vh] overflow-y-auto border-border/70 bg-card/95 backdrop-blur-xl safe-top safe-bottom sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl tracking-wide text-white">
+          <DialogTitle className="font-display text-xl tracking-wide text-white sm:text-2xl">
             {step === "paid" ? "PAGAMENTO CONFIRMADO" : "FINALIZAR COMPRA"}
           </DialogTitle>
           <DialogDescription className="text-foreground/70">
@@ -316,12 +316,12 @@ export function CheckoutDialog() {
                 </span>
               </div>
 
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-border/60 bg-background/50 p-4">
-                <div className="rounded-xl bg-white p-3">
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-border/60 bg-background/50 p-3 sm:p-4">
+                <div className="rounded-xl bg-white p-2 sm:p-3">
                   <img
                     src={pix.qrcodeUrl || pix.qrCodeBase64}
                     alt="QR Code PIX"
-                    className="h-52 w-52"
+                    className="h-44 w-44 sm:h-52 sm:w-52"
                   />
                 </div>
                 <Badge className="border-neon-pink/40 bg-neon-pink/10 text-neon-pink">
@@ -333,18 +333,18 @@ export function CheckoutDialog() {
                 <Label className="text-xs uppercase tracking-widest text-muted-foreground">
                   Ou copie o código PIX
                 </Label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-stretch gap-2">
                   <Input
                     readOnly
                     value={pix.copyPaste}
-                    className="font-mono text-xs"
+                    className="min-w-0 flex-1 font-mono text-[11px] sm:text-xs"
                     onClick={(e) => (e.target as HTMLInputElement).select()}
                   />
                   <Button
                     type="button"
                     onClick={copyPix}
                     variant="outline"
-                    className="border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/10"
+                    className="shrink-0 border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/10"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>

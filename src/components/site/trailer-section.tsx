@@ -29,22 +29,22 @@ const NEWS = [
 
 export function TrailerSection() {
   return (
-    <section id="trailer" className="relative scroll-mt-20 py-20 sm:py-28">
+    <section id="trailer" className="relative scroll-mt-20 py-16 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
-          className="mb-10 text-center"
+          className="mb-8 text-center sm:mb-10"
         >
           <Badge className="mb-3 border-neon-cyan/40 bg-neon-cyan/10 text-neon-cyan">
             Trailer oficial
           </Badge>
-          <h2 className="font-display text-4xl tracking-tight text-white sm:text-5xl md:text-6xl">
+          <h2 className="font-display text-3xl tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
             BEM-VINDO A <span className="text-gradient-vice">VICE CITY</span>
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-foreground/70">
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-foreground/70 sm:text-base">
             Assista ao trailer e sinta o clima da maior pré-venda do ano.
           </p>
         </motion.div>
@@ -69,12 +69,12 @@ export function TrailerSection() {
         </motion.div>
 
         {/* News links */}
-        <div className="mt-14">
-          <div className="mb-5 flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-muted-foreground">
+        <div className="mt-10 sm:mt-14">
+          <div className="mb-4 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground sm:mb-5 sm:text-sm sm:tracking-[0.25em]">
             <Newspaper className="h-4 w-4 text-neon-cyan" />
             Na imprensa
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
             {NEWS.map((n, i) => (
               <motion.a
                 key={n.url}
@@ -85,22 +85,22 @@ export function TrailerSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="group relative flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-5 backdrop-blur transition-all hover:-translate-y-1 hover:border-neon-cyan/50 hover:glow-cyan"
+                className="group relative flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 backdrop-blur transition-all hover:-translate-y-1 hover:border-neon-cyan/50 hover:glow-cyan sm:p-5"
               >
                 <div>
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-neon-pink">
+                  <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neon-pink sm:text-xs">
                       {n.source}
                     </span>
-                    <Badge variant="outline" className="border-neon-cyan/30 text-neon-cyan">
+                    <Badge variant="outline" className="border-neon-cyan/30 text-neon-cyan text-[10px] sm:text-xs">
                       {n.tag}
                     </Badge>
                   </div>
-                  <h3 className="text-sm font-medium leading-snug text-foreground/90 group-hover:text-white">
+                  <h3 className="text-xs font-medium leading-snug text-foreground/90 group-hover:text-white sm:text-sm">
                     {n.title}
                   </h3>
                 </div>
-                <div className="mt-4 flex items-center gap-1 text-xs text-muted-foreground group-hover:text-neon-cyan">
+                <div className="mt-3 flex items-center gap-1 text-[11px] text-muted-foreground group-hover:text-neon-cyan sm:mt-4 sm:text-xs">
                   Ler matéria
                   <ExternalLink className="ml-1 h-3 w-3" />
                 </div>

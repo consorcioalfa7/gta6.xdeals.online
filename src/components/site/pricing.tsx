@@ -98,7 +98,7 @@ export function Pricing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ duration: 0.55, delay: i * 0.1 }}
-                className={`relative flex flex-col rounded-3xl p-7 backdrop-blur transition-all ${
+                className={`relative flex flex-col rounded-3xl p-5 backdrop-blur transition-all sm:p-7 ${
                   tier.highlight
                     ? "neon-border-pink bg-card/70 glow-pink"
                     : "border border-border/60 bg-card/50"
@@ -117,14 +117,14 @@ export function Pricing() {
                 </div>
 
                 <div className="mt-3 flex items-end gap-2">
-                  <span className="font-display text-5xl text-white sm:text-6xl">
+                  <span className="font-display text-4xl text-white sm:text-5xl md:text-6xl">
                     R$ {tier.priceBRL.toLocaleString("pt-BR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </span>
                 </div>
-                <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                   <span>≈ US$ {tier.priceUSD}</span>
                   {tier.originalBRL && (
                     <span className="inline-flex items-center gap-1">
