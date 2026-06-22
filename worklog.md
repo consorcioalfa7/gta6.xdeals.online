@@ -37,3 +37,39 @@ Stage Summary:
 - Env vars necessárias no Vercel: DATABASE_URL, MISTICPAY_CLIENT_ID, MISTICPAY_CLIENT_SECRET, MISTICPAY_WEBHOOK_URL(=https://gta6.xdeals.online/webhook).
 - Arquivos-chave: src/lib/misticpay.ts, src/lib/pricing.ts, src/app/api/{checkout/create,checkout/status,webhook,stats}/route.ts, src/components/site/*, prisma/schema.prisma.
 - Deploy: push p/ GitHub → import no Vercel → configurar env vars → webhook URL já aponta para https://gta6.xdeals.online/webhook.
+
+---
+Task ID: all-v2
+Agent: main (Z.ai Code)
+Task: Otimização mobile/responsivo, metadados SEO + logo temático, README técnico e push para GitHub (consorcioalfa7/gta6.xdeals.online).
+
+Work Log:
+- Gerado logo emblema PNG (1024x1024) via z-ai image, OG banner (1344x768), e favicon PNG.
+- Criado favicon SVG vetorial temático (icon.svg) com gradiente neon magenta→cyan, palmeira, sol, numerais "VI" com glow — usado em navbar, footer, manifest, icons metadata.
+- Layout.tsx reescrito: metadataBase, viewport export separado (themeColor #0d0a1a, viewportFit=cover, colorScheme dark), title template, keywords expandidas, alternates.canonical, icons (svg+png), openGraph com imagem 1344x768 + locale pt_BR, twitter card large image, robots config (max-image-preview large), manifest link. JSON-LD estruturado no <head>: Product + AggregateOffer (2 ofertas: 199.90 InStock + 400.00 PreOrder) + WebSite + Organization. Preconnect YouTube/i.ytimg.
+- Criados sitemap.ts (/sitemap.xml dinâmico), robots.ts (/robots.txt com disallow /api/ + sitemap ref + host), manifest.ts (PWA com icons, theme color, lang pt-BR). Removido public/robots.txt estático (conflito).
+- globals.css: adicionado overflow-x:hidden + max-width:100vw no body, -webkit-text-size-adjust:100%, font-smoothing, tap-highlight transparent, utilitários safe-top/safe-bottom/safe-x (env safe-area-inset para iOS notch).
+- Hero: min-h-[100svh] (corrige 100vh mobile), pt-20 safe-top, título text-5xl base (era 6xl), padding py-12 mobile, CTAs w-full mobile + sm:w-auto, trust badges em coluna no mobile.
+- Countdown: trocado flex por grid-cols-4 fluido (cabe em 320px), fontes text-2xl mobile→4xl→5xl, gaps reduzidos, label text-[10px] mobile.
+- Navbar: logo SVG substitui gradient box com Zap, safe-top, py-2.5 mobile, botão menu 44px (h-11 w-11), aria-label dinâmico, aria-expanded, links mobile py-3 (44px touch), safe-bottom no menu.
+- Pricing: preço text-4xl mobile (era 5xl), flex-wrap nos descontos, padding p-5 mobile.
+- GameInfo: py-16 mobile, título text-3xl mobile, facts grid gap-2 mobile com fontes menores, imagens h-48 mobile + loading=lazy.
+- TrailerSection: py-16 mobile, título text-3xl→4xl→5xl→6xl, cards de notícia p-4 mobile com fontes menores.
+- CheckoutDialog: safe-top safe-bottom, título text-xl mobile, QR Code h-44 w-44 mobile→52, input copia/cola min-w-0 flex-1 + botão shrink-0 (evita overflow), font text-[11px] mobile.
+- FinalCta: py-16 mobile, título text-3xl mobile, CTA w-full mobile.
+- FAQ: py-16 mobile.
+- Footer: logo SVG, safe-bottom, py-8 mobile, nav text-xs mobile.
+- README.md técnico completo (~300 linhas): visão geral, stack, fluxo PIX (diagrama ASCII), estrutura de pastas, setup local, env vars, deploy Vercel passo-a-passo, API reference, modelo Prisma, otimizações (mobile/SEO/performance), scripts, segurança, disclaimer legal.
+- .gitignore criado: node_modules, .next, .env*, db/*.db, .zscripts, worklog.md, logs, editor.
+- Lint limpo (0 erros, 0 warnings) após remover diretivas eslint desnecessárias.
+- Verificação E2E agent-browser: mobile 390px (hero, menu hamburger 44px, checkout dialog com form completo) e desktop 1440px — ambos sem erros de console/hidratação. sitemap.xml, robots.txt, manifest.webmanifest, /api/stats todos respondendo 200.
+- Git: init, config user DarkToolsLabs, remote add com token, add -A (1046 arquivos, .env e node_modules confirmadamente ignorados), commit, branch -M main, push -u origin main — SUCESSO. Remote HEAD 826f210 corresponde ao local.
+
+Stage Summary:
+- Otimização mobile completa: todos os componentes revisados com breakpoints fluidos, safe-area iOS, touch targets ≥44px, zero scroll horizontal, countdown e checkout cabem em 320px.
+- SEO otimizado: JSON-LD Product/Offer, OG/Twitter images, sitemap.xml, robots.txt, manifest PWA, canonical, metadataBase, favicon SVG vetorial.
+- Logo temático: favicon.svg com gradiente neon + "VI" + palmeira + sol; favicon.png 192/512; og-banner.png 1344x768; logo-emblem.png 1024.
+- README técnico de ~300 linhas documentando stack, fluxo, API, deploy, env vars, otimizações.
+- Projeto publicado no GitHub: https://github.com/consorcioalfa7/gta6.xdeals.online (branch main, commit 826f210).
+- PRÓXIMO PASSO do usuário: importar repositório no Vercel, configurar env vars (DATABASE_URL, MISTICPAY_CLIENT_ID, MISTICPAY_CLIENT_SECRET, MISTICPAY_WEBHOOK_URL), adicionar domínio gta6.xdeals.online, cadastrar webhook no painel MisticPay.
+- ALERTA DE SEGURANÇA: o token GitHub ghp_... foi exposto no chat — usuário deve revogá-lo em github.com/settings/tokens após o deploy.
