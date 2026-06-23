@@ -167,36 +167,67 @@ Acesse: **http://localhost:3000**
 
 ## Variáveis de ambiente
 
-| Variável | Descrição | Exemplo |
-|---|---|---|
-| `DATABASE_URL` | URL do Prisma (SQLite local) | `file:./db/custom.db` |
-| `MISTICPAY_CLIENT_ID` | Client ID da MisticPay (`ci` header) | `abc123` |
-| `MISTICPAY_CLIENT_SECRET` | Client Secret da MisticPay (`cs` header) | `xyz789` |
-| `MISTICPAY_WEBHOOK_URL` | URL pública do webhook | `https://gta6.xdeals.online/webhook` |
+| Variável | Descrição | Local (dev) | Produção (Vercel) |
+|---|---|---|---|
+| `DATABASE_URL` | URL do banco | `file:./db/custom.db` | `libsql://<db>.turso.io` |
+| `DATABASE_AUTH_TOKEN` | Token do Turso | _(vazio)_ | `<token-turso>` |
+| `MISTICPAY_CLIENT_ID` | Client ID da MisticPay (`ci` header) | `seu_client_id` | `seu_client_id` |
+| `MISTICPAY_CLIENT_SECRET` | Client Secret da MisticPay (`cs` header) | `seu_client_secret` | `seu_client_secret` |
+| `MISTICPAY_WEBHOOK_URL` | URL pública do webhook | `https://gta6.xdeals.online/webhook` | `https://gta6.xdeals.online/webhook` |
 
-> **Atenção:** Nunca commite o arquivo `.env` reais. Use o `.env.example` como template.
+> **Por que Turso em produção?** O Vercel é serverless: o filesystem é efêmero e somente leitura, então **SQLite com arquivo local não funciona**. O [Turso](https://turso.tech) é libSQL (SQLite) over HTTP — serverless-friendly, persistente, e mantém o mesmo schema. Free tier generoso.
+
+> **Atenção:** Nunca commite o arquivo `.env` real. Use o `.env.example` como template.
 
 ---
 
 ## Deploy na Vercel
 
-1. **Conecte o repositório** no [Vercel Dashboard](https://vercel.com/new) (importe de `consorcioalfa7/gta6.xdeals.online`).
+### Passo 1 — Criar o banco Turso
+
+```bash
+# Instale a CLI do Turso
+curl -sSfL https://get.tur.so/install.sh | bash
+
+# Login (abre o navegador)
+turso auth login
+
+# Criar o banco
+turso db create gta6-xdeals
+
+# Obter a URL de conexão
+turso db show gta6-xdeals --url
+# → libsql://gta6-xdeals-<usuario>.turso.io
+
+# Criar um token de acesso
+turso db tokens create gta6-xdeals
+# → eyJhbGciOi...
+
+# Criar as tabelas (rode com a URL de produção temporariamente)
+DATABASE_URL="libsql://gta6-xdeals-<usuario>.turso.io" \
+DATABASE_AUTH_TOKEN="<token>" \
+bun run db:push
+```
+
+### Passo 2 — Configurar o Vercel
+
+1. **Conecte o repositório** em [vercel.com/new](https://vercel.com/new) (importe de `consorcioalfa7/gta6.xdeals.online`).
 2. **Framework preset:** Next.js
-3. **Build command:** `next build` (automático)
+3. **Build command:** automático (`next build`) — o `postinstall: prisma generate` roda sozinho.
 4. **Output:** `standalone` (já configurado em `next.config.ts`)
 5. **Variáveis de ambiente** (Settings → Environment Variables):
 
    ```
-   DATABASE_URL=file:./db/custom.db
+   DATABASE_URL=libsql://gta6-xdeals-<usuario>.turso.io
+   DATABASE_AUTH_TOKEN=<token-turso>
    MISTICPAY_CLIENT_ID=<seu_client_id>
    MISTICPAY_CLIENT_SECRET=<seu_client_secret>
    MISTICPAY_WEBHOOK_URL=https://gta6.xdeals.online/webhook
    ```
 
-   > **Nota sobre produção:** Para persistência de dados em serverless, considere trocar o SQLite por um banco externo (PostgreSQL/PlanetScale/Neon) ajustando o `provider` em `prisma/schema.prisma` e a `DATABASE_URL`.
-
 6. **Domínio:** Adicione `gta6.xdeals.online` em Settings → Domains e configure o DNS (CNAME para `cname.vercel-dns.com`).
 7. **Webhook MisticPay:** No painel da MisticPay, cadastre a URL `https://gta6.xdeals.online/webhook` como webhook do projeto.
+8. **Redeploy** após configurar as env vars (Deployments → ⋮ → Redeploy).
 
 ---
 
