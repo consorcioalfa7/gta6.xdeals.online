@@ -73,3 +73,42 @@ Stage Summary:
 - Projeto publicado no GitHub: https://github.com/consorcioalfa7/gta6.xdeals.online (branch main, commit 826f210).
 - PRÓXIMO PASSO do usuário: importar repositório no Vercel, configurar env vars (DATABASE_URL, MISTICPAY_CLIENT_ID, MISTICPAY_CLIENT_SECRET, MISTICPAY_WEBHOOK_URL), adicionar domínio gta6.xdeals.online, cadastrar webhook no painel MisticPay.
 - ALERTA DE SEGURANÇA: o token GitHub ghp_... foi exposto no chat — usuário deve revogá-lo em github.com/settings/tokens após o deploy.
+
+---
+Task ID: all-v3
+Agent: main (Z.ai Code)
+Task: Corrigir erro 500 em /api/stats e /api/checkout/create na produção (gta6.xdeals.online).
+
+Work Log:
+- Diagnosticado: produção /api/stats retorna 500 (página / funciona 200). Causa raiz: SQLite com arquivo local (file:./db/custom.db) NÃO funciona no Vercel serverless — filesystem efêmero/somente-leitura.
+- Solução: migrar para Turso (libSQL over HTTP) via @prisma/adapter-libsql. Mantém o schema SQLite, funciona em serverless, free tier generoso. Localmente continua usando file: (libSQL client suporta file: URL).
+- Instalado: @prisma/adapter-libsql@7.8.0 + @libsql/client@0.17.4.
+- src/lib/db.ts reescrito: PrismaClient agora construído com adapter PrismaLibSql(createClient({url, authToken})). URL vem de DATABASE_URL (file: local OU libsql:// Turso). authToken de DATABASE_AUTH_TOKEN (undefined para file local).
+- Corrigido bug de casing: export correto é PrismaLibSql (não PrismaLibSQL).
+- package.json: adicionado "postinstall": "prisma generate" — garante que o Prisma Client seja (re)gerado no build do Vercel.
+- .env.example: documentado DATABASE_AUTH_TOKEN + cenários local vs produção.
+- README.md: seção "Variáveis de ambiente" e "Deploy na Vercel" reescritas com passo-a-passo Turso (instalar CLI, criar DB, obter URL+token, db:push, configurar env vars no Vercel).
+- db/custom.db removido do tracking git (já estava no .gitignore mas era tracked do commit anterior).
+- Testado localmente: /api/stats → 200 {"earlyBirdTaken":0,...}, /api/checkout/create → 502 "Credenciais inválidas" (MisticPay placeholder, esperado), /api/webhook GET → 200. Lint limpo.
+- Commit df58986 pushado para origin/main. Vercel redeploy automático disparado.
+- Verificado produção após 60s: ainda 500 — esperado, pois as env vars do Turso ainda não foram configuradas no Vercel pelo usuário.
+
+Stage Summary:
+- CÓDIGO CORRIGIDO E PUBLICADO no GitHub (commit df58986).
+- PRODUÇÃO AINDA COM 500 porque o usuário precisa: (1) criar conta Turso + DB, (2) configurar 5 env vars no Vercel, (3) redeploy.
+- Passos para o usuário desbloquear produção:
+  1. Criar conta gratuita em https://turso.tech
+  2. Instalar CLI: curl -sSfL https://get.tur.so/install.sh | bash && turso auth login
+  3. Criar DB: turso db create gta6-xdeals
+  4. Obter URL: turso db show gta6-xdeals --url → libsql://...
+  5. Obter token: turso db tokens create gta6-xdeals
+  6. Criar tabelas (rodar localmente com URL de produção):
+     DATABASE_URL="libsql://..." DATABASE_AUTH_TOKEN="..." bun run db:push
+  7. No Vercel (Settings → Environment Variables), definir:
+     - DATABASE_URL=libsql://gta6-xdeals-<user>.turso.io
+     - DATABASE_AUTH_TOKEN=<token>
+     - MISTICPAY_CLIENT_ID=<ci real>
+     - MISTICPAY_CLIENT_SECRET=<cs real>
+     - MISTICPAY_WEBHOOK_URL=https://gta6.xdeals.online/webhook
+  8. Redeploy no Vercel (Deployments → ⋮ → Redeploy)
+- Após esses passos, /api/stats e /api/checkout/create funcionarão em produção.
