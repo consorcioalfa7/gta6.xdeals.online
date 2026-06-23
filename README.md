@@ -34,7 +34,7 @@ Plataforma de pré-venda single-page construída em Next.js 16 que permite aos c
 | Estilo | **Tailwind CSS 4** + **shadcn/ui** (New York) |
 | Animações | **Framer Motion** |
 | Estado (checkout) | **Zustand** |
-| Banco de dados | **Prisma ORM** + **SQLite** |
+| Banco de dados | **Nenhum** (store em memória em `src/lib/store.ts`) |
 | Pagamentos | **MisticPay API** (PIX) |
 | Fontes | Geist (sans) + Anton (display) |
 | Deploy | **Vercel** (output `standalone`) |
@@ -51,7 +51,7 @@ Cliente preenche form (Nome, Email, WhatsApp, CPF)
 POST /api/checkout/create
         │  ┌─ valida campos
         │  ├─ controla 50 vagas early-bird (count no DB)
-        │  ├─ cria Order (status=PENDING) no Prisma
+        │  ├─ cria Order (status=PENDING) no store em memória
         │  └─ chama MisticPay: POST /api/transactions/create
         │              headers: { ci, cs }
         │              body: { amount, payerName, payerDocument,
@@ -99,13 +99,13 @@ Próximo poll do frontend detecta status=PAID → tela de sucesso
 │   │   ├── robots.ts              # /robots.txt dinâmico
 │   │   ├── manifest.ts            # /manifest.webmanifest (PWA)
 │   │   └── api/
-│   │       ├── checkout/create/route.ts   # Cria Order + chama MisticPay
+│   │       ├── checkout/create/route.ts   # Cria pedido + gera PIX
 │   │       ├── checkout/status/route.ts   # Polling de status
-│   │       ├── webhook/route.ts           # Webhook MisticPay (depósito/saque/MED)
+│   │       ├── webhook/route.ts           # Webhook de confirmação PIX
 │   │       └── stats/route.ts             # Contador de vagas early-bird
 │   ├── lib/
-│   │   ├── db.ts                  # Cliente Prisma (singleton)
-│   │   ├── misticpay.ts           # Integração API MisticPay
+│   │   ├── store.ts                # Store em memória (pedidos)
+│   │   ├── misticpay.ts           # Integração API de pagamentos
 │   │   ├── pricing.ts             # Config de preços/tiers/datas
 │   │   └── utils.ts               # cn() helper
 │   └── components/
@@ -134,7 +134,7 @@ Próximo poll do frontend detecta status=PAID → tela de sucesso
 ### Pré-requisitos
 
 - **Node.js 20+** ou **Bun**
-- Credenciais da **MisticPay** (`ci` / `cs`)
+- Credenciais do provedor de pagamentos PIX (`ci` / `cs`)
 
 ### Passos
 
@@ -148,34 +148,28 @@ bun install        # ou npm install
 
 # 3. Configurar variáveis de ambiente
 cp .env.example .env
-# Edite .env com suas credenciais reais:
-#   DATABASE_URL="file:./db/custom.db"
+# Edite .env com suas credenciais:
 #   MISTICPAY_CLIENT_ID=seu_client_id
 #   MISTICPAY_CLIENT_SECRET=seu_client_secret
 #   MISTICPAY_WEBHOOK_URL=https://gta6.xdeals.online/webhook
 
-# 4. Criar o banco de dados
-bun run db:push
-
-# 5. Iniciar o dev server
+# 4. Iniciar o dev server (sem necessidade de banco de dados)
 bun run dev
 ```
 
 Acesse: **http://localhost:3000**
 
+> **Sem banco de dados:** o projeto usa armazenamento em memória (`src/lib/store.ts`). Não há `db:push` nem configuração de Turso/SQLite.
+
 ---
 
 ## Variáveis de ambiente
 
-| Variável | Descrição | Local (dev) | Produção (Vercel) |
-|---|---|---|---|
-| `DATABASE_URL` | URL do banco | `file:./db/custom.db` | `libsql://<db>.turso.io` |
-| `DATABASE_AUTH_TOKEN` | Token do Turso | _(vazio)_ | `<token-turso>` |
-| `MISTICPAY_CLIENT_ID` | Client ID da MisticPay (`ci` header) | `seu_client_id` | `seu_client_id` |
-| `MISTICPAY_CLIENT_SECRET` | Client Secret da MisticPay (`cs` header) | `seu_client_secret` | `seu_client_secret` |
-| `MISTICPAY_WEBHOOK_URL` | URL pública do webhook | `https://gta6.xdeals.online/webhook` | `https://gta6.xdeals.online/webhook` |
-
-> **Por que Turso em produção?** O Vercel é serverless: o filesystem é efêmero e somente leitura, então **SQLite com arquivo local não funciona**. O [Turso](https://turso.tech) é libSQL (SQLite) over HTTP — serverless-friendly, persistente, e mantém o mesmo schema. Free tier generoso.
+| Variável | Descrição | Exemplo |
+|---|---|---|
+| `MISTICPAY_CLIENT_ID` | Client ID do provedor (`ci` header) | `seu_client_id` |
+| `MISTICPAY_CLIENT_SECRET` | Client Secret do provedor (`cs` header) | `seu_client_secret` |
+| `MISTICPAY_WEBHOOK_URL` | URL pública do webhook | `https://gta6.xdeals.online/webhook` |
 
 > **Atenção:** Nunca commite o arquivo `.env` real. Use o `.env.example` como template.
 
@@ -183,51 +177,23 @@ Acesse: **http://localhost:3000**
 
 ## Deploy na Vercel
 
-### Passo 1 — Criar o banco Turso
-
-```bash
-# Instale a CLI do Turso
-curl -sSfL https://get.tur.so/install.sh | bash
-
-# Login (abre o navegador)
-turso auth login
-
-# Criar o banco
-turso db create gta6-xdeals
-
-# Obter a URL de conexão
-turso db show gta6-xdeals --url
-# → libsql://gta6-xdeals-<usuario>.turso.io
-
-# Criar um token de acesso
-turso db tokens create gta6-xdeals
-# → eyJhbGciOi...
-
-# Criar as tabelas (rode com a URL de produção temporariamente)
-DATABASE_URL="libsql://gta6-xdeals-<usuario>.turso.io" \
-DATABASE_AUTH_TOKEN="<token>" \
-bun run db:push
-```
-
-### Passo 2 — Configurar o Vercel
-
 1. **Conecte o repositório** em [vercel.com/new](https://vercel.com/new) (importe de `consorcioalfa7/gta6.xdeals.online`).
 2. **Framework preset:** Next.js
-3. **Build command:** automático (`next build`) — o `postinstall: prisma generate` roda sozinho.
+3. **Build command:** automático (`next build`)
 4. **Output:** `standalone` (já configurado em `next.config.ts`)
 5. **Variáveis de ambiente** (Settings → Environment Variables):
 
    ```
-   DATABASE_URL=libsql://gta6-xdeals-<usuario>.turso.io
-   DATABASE_AUTH_TOKEN=<token-turso>
    MISTICPAY_CLIENT_ID=<seu_client_id>
    MISTICPAY_CLIENT_SECRET=<seu_client_secret>
    MISTICPAY_WEBHOOK_URL=https://gta6.xdeals.online/webhook
    ```
 
 6. **Domínio:** Adicione `gta6.xdeals.online` em Settings → Domains e configure o DNS (CNAME para `cname.vercel-dns.com`).
-7. **Webhook MisticPay:** No painel da MisticPay, cadastre a URL `https://gta6.xdeals.online/webhook` como webhook do projeto.
+7. **Webhook:** No painel do provedor de pagamentos, cadastre a URL `https://gta6.xdeals.online/webhook`.
 8. **Redeploy** após configurar as env vars (Deployments → ⋮ → Redeploy).
+
+> **Nota sobre persistência:** o store é em memória. Em serverless, instâncias frias não compartilham estado, então um pedido pode se "perder" se a instância reciclar entre a criação e a confirmação do pagamento. Para um MVP de pré-venda isto é aceitável; para persistência total, integre [Vercel KV](https://vercel.com/docs/storage/vercel-kv) no futuro substituindo `src/lib/store.ts`.
 
 ---
 
@@ -286,28 +252,29 @@ Contador de vagas early-bird e total de pedidos pagos.
 
 ---
 
-## Modelo de dados (Prisma)
+## Modelo de dados (store em memória)
 
-```prisma
-model Order {
-  id               String    @id @default(cuid())
-  customerName     String
-  customerEmail    String
-  customerWhatsapp String
-  customerDocument String    // CPF sem formatação
-  tier             String    // early_bird | regular
-  amountBRL        Float
-  amountUSD        Float
-  applicationTxId  String    @unique
-  misticpayTxId    String?
-  status           String    // PENDING | PAID | FAILED | EXPIRED
-  qrCodeBase64     String?
-  qrcodeUrl        String?
-  copyPaste        String?
-  e2e              String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  paidAt           DateTime?
+O armazenamento é feito em `src/lib/store.ts` — um `Map<string, OrderRecord>` em memória (persiste entre hot reloads em dev via `globalThis`). Sem banco de dados, sem migrações.
+
+```ts
+interface OrderRecord {
+  id: string;
+  applicationTxId: string;   // ID enviado ao provedor de pagamentos
+  misticpayTxId?: string;    // ID retornado pelo provedor
+  customerName: string;
+  customerEmail: string;
+  customerWhatsapp: string;
+  customerDocument: string;  // CPF
+  tier: string;              // early_bird | regular
+  amountBRL: number;
+  amountUSD: number;
+  status: "PENDING" | "PAID" | "FAILED";
+  qrCodeBase64?: string;
+  qrcodeUrl?: string;
+  copyPaste?: string;
+  e2e?: string;
+  createdAt: number;
+  paidAt?: number;
 }
 ```
 
@@ -344,7 +311,7 @@ model Order {
 - Fontes com `display: "swap"`.
 - Imagens otimizadas via `next/image` onde aplicável; `loading="lazy"` nas decorativas.
 - Polling de status a cada 3,5s (balanceia UX × custo de servidor).
-- Singleton do Prisma (evita múltiplas conexões em dev).
+- Store em memória singleton (evita recriar o Map a cada request).
 
 ---
 
@@ -356,9 +323,6 @@ model Order {
 | `bun run build` | Build de produção (standalone) |
 | `bun run start` | Inicia o server de produção |
 | `bun run lint` | ESLint + regras Next.js |
-| `bun run db:push` | Sincroniza o schema Prisma com o banco |
-| `bun run db:generate` | Regenera o Prisma Client |
-| `bun run db:migrate` | Cria migration (dev) |
 
 ---
 

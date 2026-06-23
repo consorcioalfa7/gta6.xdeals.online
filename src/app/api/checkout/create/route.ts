@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { store } from "@/lib/store";
 import { createPixTransaction } from "@/lib/misticpay";
 import { getPricingTier, EARLY_BIRD_LIMIT, type Tier } from "@/lib/pricing";
 import { randomUUID } from "crypto";
@@ -62,12 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (tier === "early_bird") {
-      const taken = await db.order.count({
-        where: {
-          tier: "early_bird",
-          status: { in: ["PENDING", "PAID"] },
-        },
-      });
+      const taken = store.countEarlyBirdTaken();
       if (taken >= EARLY_BIRD_LIMIT) {
         return NextResponse.json(
           {
@@ -81,20 +76,22 @@ export async function POST(req: NextRequest) {
     }
 
     const applicationTxId = `gta6-${tier}-${randomUUID()}`;
+    const orderId = `ord_${randomUUID()}`;
 
-    const order = await db.order.create({
-      data: {
-        customerName: name,
-        customerEmail: email,
-        customerWhatsapp: whatsapp,
-        customerDocument: cpf,
-        tier,
-        amountBRL: pricing.priceBRL,
-        amountUSD: pricing.priceUSD,
-        applicationTxId,
-        status: "PENDING",
-      },
-    });
+    const order = {
+      id: orderId,
+      applicationTxId,
+      customerName: name,
+      customerEmail: email,
+      customerWhatsapp: whatsapp,
+      customerDocument: cpf,
+      tier,
+      amountBRL: pricing.priceBRL,
+      amountUSD: pricing.priceUSD,
+      status: "PENDING" as const,
+      createdAt: Date.now(),
+    };
+    store.create(order);
 
     let pix;
     try {
@@ -106,30 +103,24 @@ export async function POST(req: NextRequest) {
         description: `Pré-venda GTA6 XDeals — ${pricing.label}`,
       });
     } catch (err) {
-      await db.order.update({
-        where: { id: order.id },
-        data: { status: "FAILED" },
-      });
+      store.update(orderId, { status: "FAILED" });
       const message = err instanceof Error ? err.message : "Erro desconhecido";
       return NextResponse.json(
-        { error: "Falha ao gerar o PIX na MisticPay.", detail: message },
+        { error: "Não foi possível gerar o QR Code PIX.", detail: message },
         { status: 502 }
       );
     }
 
-    const updated = await db.order.update({
-      where: { id: order.id },
-      data: {
-        misticpayTxId: String(pix.transactionId),
-        qrCodeBase64: pix.qrCodeBase64,
-        qrcodeUrl: pix.qrcodeUrl,
-        copyPaste: pix.copyPaste,
-      },
+    store.update(orderId, {
+      misticpayTxId: String(pix.transactionId),
+      qrCodeBase64: pix.qrCodeBase64,
+      qrcodeUrl: pix.qrcodeUrl,
+      copyPaste: pix.copyPaste,
     });
 
     return NextResponse.json({
-      orderId: updated.id,
-      applicationTxId: updated.applicationTxId,
+      orderId,
+      applicationTxId,
       misticpayTxId: pix.transactionId,
       tier,
       amountBRL: pricing.priceBRL,

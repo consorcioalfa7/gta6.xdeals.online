@@ -259,14 +259,6 @@ export function CheckoutDialog() {
                 </div>
               )}
 
-              <div className="rounded-lg border border-neon-cyan/30 bg-neon-cyan/5 p-3 text-xs text-foreground/70">
-                <p className="flex items-start gap-2">
-                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-neon-cyan" />
-                  O CPF é exigido pela API de pagamentos MisticPay para gerar o
-                  QR Code PIX. Seus dados são usados apenas para esta transação.
-                </p>
-              </div>
-
               <Button
                 type="submit"
                 disabled={submitting}

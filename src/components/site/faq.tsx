@@ -25,7 +25,7 @@ const FAQS = [
   },
   {
     q: "O pagamento é seguro?",
-    a: "Sim. O PIX é gerado pela API da MisticPay, provedor de pagamentos homologado pelo Banco Central. A confirmação chega automaticamente via webhook assim que o banco confirma a transferência.",
+    a: "Sim. O pagamento é feito via PIX, com geração instantânea do QR Code e confirmação automática assim que o banco confirma a transferência. Seus dados são usados apenas para esta transação.",
   },
   {
     q: "Quais plataformas são suportadas?",

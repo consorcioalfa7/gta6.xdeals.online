@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { store } from "@/lib/store";
 
 export const runtime = "nodejs";
 
 /**
- * Webhook da MisticPay — recebe notificações de depósito (PIX), saque e MED.
- * URL pública configurada no Vercel: https://gta6.xdeals.online/webhook
+ * Webhook de pagamento — recebe notificações de depósito (PIX), saque e MED.
+ * URL pública: https://gta6.xdeals.online/webhook
  *
  * Payload de depósito (cash-in):
  * {
@@ -27,13 +27,13 @@ export async function POST(req: NextRequest) {
     try {
       payload = JSON.parse(raw);
     } catch {
-      // Mesmo payload inválido, respondemos 200 para a MisticPay não retentar indefinidamente
+      // Payload inválido: respondemos 200 para não gerar retentativas infinitas
       return NextResponse.json({ ok: true, ignored: true, reason: "invalid-json" });
     }
 
     // Eventos de MED (infração) — apenas logamos e ack
     if (payload?.event === "INFRACTION") {
-      console.warn("[misticpay/webhook] INFRACTION recebida:", JSON.stringify(payload).slice(0, 400));
+      console.warn("[webhook] INFRACTION recebida:", JSON.stringify(payload).slice(0, 400));
       return NextResponse.json({ ok: true, event: "INFRACTION" });
     }
 
@@ -50,48 +50,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, ignored: true, reason: `type=${type}` });
     }
 
-    // Procura o pedido pelo ID da MisticPay ou pelo nosso applicationTxId
-    const order = await db.order.findFirst({
-      where: {
-        OR: [
-          { misticpayTxId: String(txId) },
-          { applicationTxId: String(txId) },
-        ],
-      },
-    });
-
+    // Procura o pedido pelo ID externo ou pelo nosso applicationTxId
+    const order = store.findByTxId(txId);
     if (!order) {
-      console.warn("[misticpay/webhook] pedido não encontrado para txId:", txId);
+      console.warn("[webhook] pedido não encontrado para txId:", txId);
       return NextResponse.json({ ok: true, ignored: true, reason: "order-not-found" });
     }
 
     if (status === "COMPLETO" || status === "CONCLUIDO" || status === "APROVADO") {
       if (order.status !== "PAID") {
-        await db.order.update({
-          where: { id: order.id },
-          data: {
-            status: "PAID",
-            paidAt: new Date(),
-            e2e: payload?.e2e ? String(payload.e2e) : order.e2e,
-          },
+        store.update(order.id, {
+          status: "PAID",
+          paidAt: Date.now(),
+          e2e: payload?.e2e ? String(payload.e2e) : order.e2e,
         });
-        console.log(`[misticpay/webhook] pedido ${order.id} marcado como PAID`);
+        console.log(`[webhook] pedido ${order.id} marcado como PAID`);
       }
       return NextResponse.json({ ok: true, status: "PAID" });
     }
 
     if (status === "REJEITADO" || status === "FALHOU" || status === "CANCELADO") {
-      await db.order.update({
-        where: { id: order.id },
-        data: { status: "FAILED" },
-      });
+      store.update(order.id, { status: "FAILED" });
       return NextResponse.json({ ok: true, status: "FAILED" });
     }
 
     // Outros status (ex: PENDENTE) — apenas ack
     return NextResponse.json({ ok: true, status });
   } catch (err) {
-    console.error("[misticpay/webhook] erro:", err);
+    console.error("[webhook] erro:", err);
     return NextResponse.json({ ok: false, error: "internal" }, { status: 500 });
   }
 }
@@ -99,7 +85,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    service: "misticpay-webhook",
+    service: "pix-webhook",
     timestamp: new Date().toISOString(),
   });
 }

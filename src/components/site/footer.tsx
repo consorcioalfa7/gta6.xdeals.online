@@ -23,7 +23,7 @@ export function Footer() {
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-neon-cyan" />
-            Pagamento seguro via PIX · MisticPay
+            Pagamento seguro via PIX · Confirmação automática
           </div>
         </div>
 
